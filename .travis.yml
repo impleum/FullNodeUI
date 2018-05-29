@@ -55,8 +55,7 @@ script:
 
 deploy:
   provider: releases
-  api_key:
-    secure: $secure_github_key # this key is set on the Travis build page 
+  api_key: $github_key # this key is set on the Travis build page 
   file_glob: true
   file: 
     - "$TRAVIS_BUILD_DIR/FullNode.UI/app-builds/*.deb"

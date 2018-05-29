@@ -33,11 +33,11 @@ echo $log_prefix FINISHED restoring dotnet and npm packages
 
 # dotnet publish
 echo $log_prefix running 'dotnet publish'
-cd $TRAVIS_BUILD_DIR/StratisBitcoinFullNode/src/Stratis.StratisD
+cd $TRAVIS_BUILD_DIR/ImpleumBitcoinFullNode/src/Impleum.ImpleumD
 dotnet publish -c $configuration -r $TRAVIS_OS_NAME-$arch -v m -o $TRAVIS_BUILD_DIR/FullNode.UI/daemon
 
-echo $log_prefix chmoding the Stratis.StratisD file
-chmod +x $TRAVIS_BUILD_DIR/FullNode.UI/daemon/Stratis.StratisD
+echo $log_prefix chmoding the Impleum.ImpleumD file
+chmod +x $TRAVIS_BUILD_DIR/FullNode.UI/daemon/Impleum.ImpleumD
 
 # node Build
 cd $TRAVIS_BUILD_DIR/FullNode.UI

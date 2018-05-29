@@ -89,7 +89,7 @@ before_build:
 build_script:
 - ps: |
       Write-Host "$env:log_prefix running 'dotnet publish'" -foregroundcolor "magenta"
-      cd $env:APPVEYOR_BUILD_FOLDER/StratisBitcoinFullNode/src/Stratis.StratisD
+      cd $env:APPVEYOR_BUILD_FOLDER/ImpleumBitcoinFullNode/src/Impleum.ImpleumD
       dotnet publish -c $env:configuration -v m -r $env:win_runtime -o $env:APPVEYOR_BUILD_FOLDER\FullNode.UI\daemon
       if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
       
@@ -132,7 +132,7 @@ deploy:
 - provider: GitHub
   tag: $(APPVEYOR_REPO_TAG_NAME)
   auth_token:
-    secure: faXallYrtShJywqNK+adalNNl50Wjns7dFsCDDx5/eNBegshCLjfshUeMPgIX9Ld
+    secure: CTb6pVlofSzwfTmUo8t+Bc9gstxNmHVY2PEYqi67t45VByAMQfM8zYDBZHUf3qDd
   draft: false
   prerelease: true
   force_update: true
