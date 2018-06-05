@@ -1,3 +1,4 @@
 [submodule "ImpleumBitcoinFullNode"]
 	path = ImpleumBitcoinFullNode
 	url = https://github.com/impleum/ImpleumBitcoinFullNode.git
+	branch = master
