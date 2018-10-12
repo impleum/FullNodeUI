@@ -54,3 +54,4 @@ This will compile the Angular code and spawn the Electron process.
 |`npm run package:mac`|  On a MAC OS, builds your application and generates a `.app` file of your application that can be run on Mac |
 
 **The application is optimised. Only the files of /dist folder are included in the executable.**
+ 
