@@ -114,7 +114,7 @@ export class LoginComponent implements OnInit {
     this.isDecrypting = true;
     this.globalService.setWalletName(this.openWalletForm.get("selectWallet").value);
     this.globalService.setCoinName("TestImpleum");
-    this.globalService.setCoinUnit("TIMP");
+    this.globalService.setCoinUnit("TIMPL");
     this.getCurrentNetwork();
     let walletLoad = new WalletLoad(
       this.openWalletForm.get("selectWallet").value,
@@ -159,10 +159,10 @@ export class LoginComponent implements OnInit {
             this.globalService.setNetwork(responseMessage.network);
             if (responseMessage.network === "ImpleumMain") {
               this.globalService.setCoinName("Impleum");
-              this.globalService.setCoinUnit("IMP");
+              this.globalService.setCoinUnit("IMPL");
             } else if (responseMessage.network === "ImpleumTest") {
               this.globalService.setCoinName("TestImpleum");
-              this.globalService.setCoinUnit("TIMP");
+              this.globalService.setCoinUnit("TIMPL");
             }
           }
         },
