@@ -9,7 +9,7 @@
   min-width: 0;
   word-wrap: break-word;
   background-clip: border-box;
-  border: $card-border-width solid $card-border-color;
+  border: $card-border-width solid $white;
 
   > hr {
     margin-right: 0;
@@ -34,7 +34,8 @@
   // as much space as possible, ensuring footers are aligned to the bottom.
   flex: 1 1 auto;
   padding: 0.85rem 1rem;
-  background-color: $card-bg;
+  background-color: $card-bg;  
+  dl, dt, dd {margin-bottom: 0 !important;}
 }
 
 .card-title {
@@ -82,8 +83,7 @@
 
 .card-footer {
   padding: $card-spacer-y $card-spacer-x;
-  background-color: $card-cap-bg;
-  border-top: $card-border-width solid $card-border-color;
+  background-color: $white;
 
   &:last-child {
     @include border-radius(0 0 $card-inner-border-radius $card-inner-border-radius);
