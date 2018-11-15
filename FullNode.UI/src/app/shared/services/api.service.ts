@@ -14,7 +14,6 @@ import { WalletCreation } from '../classes/wallet-creation';
 import { WalletRecovery } from '../classes/wallet-recovery';
 import { WalletLoad } from '../classes/wallet-load';
 import { WalletInfo } from '../classes/wallet-info';
-import { Mnemonic } from '../classes/mnemonic';
 import { FeeEstimation } from '../classes/fee-estimation';
 import { TransactionBuilding } from '../classes/transaction-building';
 import { TransactionSending } from '../classes/transaction-sending';
@@ -24,6 +23,7 @@ import { TransactionSending } from '../classes/transaction-sending';
  */
 @Injectable()
 export class ApiService {
+
     constructor(private http: Http, private globalService: GlobalService, private electronService: ElectronService) {
       this.setApiPort();
     };
@@ -36,6 +36,38 @@ export class ApiService {
     setApiPort() {
       this.apiPort = this.electronService.ipcRenderer.sendSync('get-port');
       this.stratisApiUrl = 'http://localhost:' + this.apiPort + '/api';
+    }
+
+    getNodeStatus(): Observable<any> {
+        return this.http
+            .get(this.stratisApiUrl + '/node/status')
+            .map((response: Response) => response.json());
+    }
+
+    getAddressBookAddresses(skip: number, take: number): Observable<any> {
+        const params: URLSearchParams = new URLSearchParams();
+        params.set('skip', skip.toString());
+        params.set('take', take.toString());
+        return this.http
+            .get(this.stratisApiUrl + '/AddressBook', new RequestOptions({headers: this.headers, search: params}))
+            .map((response: Response) => response.json());
+    }
+
+    addAddressBookAddress(label: string, address: string): Observable<any> {
+        const params: URLSearchParams = new URLSearchParams();
+        params.set('label', label);
+        params.set('address', address);
+        return this.http
+            .post(this.stratisApiUrl + '/AddressBook/address', new RequestOptions({headers: this.headers, search: params}))
+            .map((response: Response) => response.json());
+    }
+
+    removeAddressBookAddress(label: string): Observable<any> {
+        const params: URLSearchParams = new URLSearchParams();
+        params.set('label', label);
+        return this.http
+            .post(this.stratisApiUrl + '/AddressBook/address', new RequestOptions({headers: this.headers, search: params}))
+            .map((response: Response) => response.json());
     }
 
     /**
@@ -248,7 +280,7 @@ export class ApiService {
      */
     startStaking(data: any): Observable<any> {
       return this.http
-        .post(this.stratisApiUrl + '/miner/startstaking', JSON.stringify(data), {headers: this.headers})
+        .post(this.stratisApiUrl + '/staking/startstaking', JSON.stringify(data), {headers: this.headers})
         .map((response: Response) => response);
     }
 
@@ -259,7 +291,7 @@ export class ApiService {
       return Observable
         .interval(this.pollingInterval)
         .startWith(0)
-        .switchMap(() => this.http.get(this.stratisApiUrl + '/miner/getstakinginfo'))
+        .switchMap(() => this.http.get(this.stratisApiUrl + '/staking/getstakinginfo'))
         .map((response: Response) => response);
     }
 
@@ -268,7 +300,7 @@ export class ApiService {
       */
     stopStaking(): Observable<any> {
       return this.http
-        .post(this.stratisApiUrl + '/miner/stopstaking', {headers: this.headers})
+        .post(this.stratisApiUrl + '/staking/stopstaking', {headers: this.headers})
         .map((response: Response) => response);
     }
 
@@ -279,5 +311,49 @@ export class ApiService {
       return this.http
         .post(this.stratisApiUrl + '/node/shutdown', {headers: this.headers})
         .map((response: Response) => response);
+    }
+
+    /*
+     * Get the active smart contract wallet address.
+     */
+    getAccountAddress(walletName: string): Observable<Response> {
+
+      let params: URLSearchParams = new URLSearchParams();
+      params.set('walletName', walletName);
+
+      return this.http
+        .get(this.stratisApiUrl + '/smartcontractwallet/account-address', new RequestOptions({headers: this.headers, search: params}));
+    }
+
+    getAccountAddresses(walletName: string): any {
+      let params: URLSearchParams = new URLSearchParams();
+      params.set('walletName', walletName);
+
+      return this.http
+        .get(this.stratisApiUrl + '/smartcontractwallet/account-addresses', new RequestOptions({headers: this.headers, search: params}));
+    }
+
+    /*
+     * Get the balance of the active smart contract address.
+     */
+    getAccountBalance(walletName: string): Observable<Response> {
+
+      let params: URLSearchParams = new URLSearchParams();
+      params.set('walletName', walletName);
+
+      return this.http
+        .get(this.stratisApiUrl + '/smartcontractwallet/account-balance', new RequestOptions({headers: this.headers, search: params}));
+    }
+
+        /*
+     * Get the balance of the active smart contract address.
+     */
+    getAddressBalance(address: string): Observable<Response> {
+
+      let params: URLSearchParams = new URLSearchParams();
+      params.set('address', address);
+
+      return this.http
+        .get(this.stratisApiUrl + '/smartcontractwallet/address-balance', new RequestOptions({headers: this.headers, search: params}));
     }
 }
