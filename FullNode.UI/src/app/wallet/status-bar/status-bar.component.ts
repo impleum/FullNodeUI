@@ -25,6 +25,8 @@ export class StatusBarComponent implements OnInit {
   private percentSyncedNumber: number = 0;
   public percentSynced: string;
   public stakingEnabled: boolean;
+  toolTip = '';
+  connectedNodesTooltip = '';
 
   constructor(private apiService: ApiService, private globalService: GlobalService, private genericModalService: ModalService) { }
 
@@ -47,6 +49,15 @@ export class StatusBarComponent implements OnInit {
             this.chainTip = generalWalletInfoResponse.chainTip;
             this.isChainSynced = generalWalletInfoResponse.isChainSynced;
             this.connectedNodes = generalWalletInfoResponse.connectedNodes;
+          
+            const processedText = `Processed ${this.lastBlockSyncedHeight} blocks of transaction history.`;
+            this.toolTip = `Synchronizing.  ${processedText}`;
+            
+            if (this.connectedNodes == 1) {
+                this.connectedNodesTooltip = "1 connection";
+            } else if (this.connectedNodes >= 0) {
+                this.connectedNodesTooltip = `${this.connectedNodes} connections`;
+            }
 
             if(!this.isChainSynced) {
               this.percentSynced = "syncing...";
@@ -58,6 +69,10 @@ export class StatusBarComponent implements OnInit {
               }
 
               this.percentSynced = this.percentSyncedNumber.toFixed(0) + '%';
+
+              if (this.percentSynced === '100%') {
+                this.toolTip = `Up to date.  ${processedText}`;
+              }
             }
           }
         },
