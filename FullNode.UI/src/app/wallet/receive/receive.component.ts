@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
-import { ApiService } from '../../shared/services/api.service';
-import { GlobalService } from '../../shared/services/global.service';
-import { ModalService } from '../../shared/services/modal.service';
+import { ApiService } from '@shared/services/api.service';
+import { GlobalService } from '@shared/services/global.service';
+import { ModalService } from '@shared/services/modal.service';
 
-import { WalletInfo } from '../../shared/classes/wallet-info';
+import { WalletInfo } from '@shared/models/wallet-info';
 
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
@@ -25,9 +25,14 @@ export class ReceiveComponent {
   public usedAddresses: string[];
   public unusedAddresses: string[];
   public changeAddresses: string[];
+  public pageNumberUsed: number = 1;
+  public pageNumberUnused: number = 1;
+  public pageNumberChange: number = 1;
+  public sidechainEnabled: boolean;
   private errorMessage: string;
 
   ngOnInit() {
+    this.sidechainEnabled = this.globalService.getSidechainEnabled();
     this.getUnusedReceiveAddresses();
   }
 
@@ -46,30 +51,16 @@ export class ReceiveComponent {
   }
 
   private getUnusedReceiveAddresses() {
-    let walletInfo = new WalletInfo(this.globalService.getWalletName())
+    const walletInfo = new WalletInfo(this.globalService.getWalletName());
     this.apiService.getUnusedReceiveAddress(walletInfo)
       .subscribe(
         response => {
-          if (response.status >= 200 && response.status < 400) {
-            this.address = response.json();
-            this.qrString = "impleum:" + response.json();
-          }
-        },
-        error => {
-          console.log(error);
-          if (error.status === 0) {
-            this.genericModalService.openModal(null, null);
-          } else if (error.status >= 400) {
-            if (!error.json().errors[0]) {
-              console.log(error);
-            }
-            else {
-              this.genericModalService.openModal(null, error.json().errors[0].message);
-            }
-          }
+            this.address = response;
+            // TODO: fix this later to use the actual sidechain name instead of 'cirrus'
+            const networkName = this.globalService.getSidechainEnabled() ? 'cirrus' : 'stratis';
+            this.qrString = `${networkName}:${response}`;
         }
-      )
-    ;
+      );
   }
 
   private getAddresses() {
@@ -77,39 +68,22 @@ export class ReceiveComponent {
     this.apiService.getAllAddresses(walletInfo)
       .subscribe(
         response => {
-          if (response.status >= 200 && response.status < 400) {
-            this.allAddresses = [];
-            this.usedAddresses = [];
-            this.unusedAddresses = [];
-            this.changeAddresses = [];
-            this.allAddresses = response.json().addresses;
+          this.allAddresses = [];
+          this.usedAddresses = [];
+          this.unusedAddresses = [];
+          this.changeAddresses = [];
+          this.allAddresses = response.addresses;
 
-            for (let address of this.allAddresses) {
-              if (address.isUsed) {
-                this.usedAddresses.push(address.address);
-              } else if (address.isChange) {
-                this.changeAddresses.push(address.address);
-              } else {
-                this.unusedAddresses.push(address.address);
-              }
-            }
-
-          }
-        },
-        error => {
-          console.log(error);
-          if (error.status === 0) {
-            this.genericModalService.openModal(null, null);
-          } else if (error.status >= 400) {
-            if (!error.json().errors[0]) {
-              console.log(error);
-            }
-            else {
-              this.genericModalService.openModal(null, error.json().errors[0].message);
+          for (let address of this.allAddresses) {
+            if (address.isUsed) {
+              this.usedAddresses.push(address.address);
+            } else if (address.isChange) {
+              this.changeAddresses.push(address.address);
+            } else {
+              this.unusedAddresses.push(address.address);
             }
           }
         }
-      )
-    ;
+      );
   }
 }

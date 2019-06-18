@@ -1,6 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { GlobalService } from '../../../../../shared/services/global.service';
+import { GlobalService } from '@shared/services/global.service';
 
 import { ColdStakingServiceBase } from '../../../cold-staking.service';
 
@@ -21,9 +21,9 @@ export class ColdStakingWithdrawComponent implements OnInit {
     passwordValid = false;
     canWithdraw = false;
     feeTypes: FeeType[] = [
-        { id: 0, display: 'Low - 0.0001 IMPL' },
-        { id: 1, display: 'Medium - 0.001 IMPL' },
-        { id: 2, display: 'High - 0.01 IMPL' },
+        { id: 0, display: 'Low - 0.0001 STRAT' },
+        { id: 1, display: 'Medium - 0.001 STRAT' },
+        { id: 2, display: 'High - 0.01 STRAT' },
     ];
     selectedFeeType: FeeType;
 

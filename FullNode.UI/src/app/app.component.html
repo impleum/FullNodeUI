@@ -37,9 +37,10 @@
 </div>
 
 <div *ngIf="loadingFailed">
-    <div class="login">
-        <div class="row align-items-center h-100">
-            <div id="logoAnim" class="mb-4 mx-auto">
+  <div class="login">
+      <div class="row align-items-center h-100">
+          <div id="logoAnim" class="mb-4 mx-auto">
+            <div class="text-center">
                 <svg width="250px" height="207px" viewBox="0 0 250 207" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <desc>Created with Sketch.</desc>
                     <defs>
@@ -68,10 +69,14 @@
                         </g>
                     </g>
                 </svg>
-                <div class="loadingText mt-4 col-12 text-center">Loading failed - please close and try again</div>
             </div>
-        </div>
-    </div>
+            <div class="loadingText mt-4 text-danger text-center">
+              Loading Failed - Unable to connect to Impleum Node.<br>
+              If you continue to receive this message after restarting, please have a look at the support section <a class="text-primary" (click)="openSupport()"><u>here</u></a>.
+            </div>
+          </div>
+      </div>
+  </div>
 </div>
 
 <router-outlet *ngIf="!loading && !loadingFailed"></router-outlet>

@@ -2,9 +2,9 @@ import { Component, OnInit, Input } from '@angular/core';
 
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
-import { GlobalService } from '../../../shared/services/global.service';
+import { GlobalService } from '@shared/services/global.service';
 
-import { CoinNotationPipe } from '../../../shared/pipes/coin-notation.pipe';
+import { CoinNotationPipe } from '@shared/pipes/coin-notation.pipe';
 
 @Component({
   selector: 'app-send-confirmation',
@@ -15,6 +15,9 @@ export class SendConfirmationComponent implements OnInit {
 
   @Input() transaction: any;
   @Input() transactionFee: any;
+  @Input() sidechainEnabled: boolean;
+  @Input() opReturnAmount: number;
+  @Input() hasOpReturn: boolean;
   constructor(private globalService: GlobalService, public activeModal: NgbActiveModal) { }
 
   public showDetails: boolean = false;
@@ -22,8 +25,13 @@ export class SendConfirmationComponent implements OnInit {
 
   ngOnInit() {
     this.coinUnit = this.globalService.getCoinUnit();
-    this.transactionFee = new CoinNotationPipe(this.globalService).transform(this.transactionFee);
-    this.transaction.amount = +this.transaction.amount + +this.transactionFee;
+    this.transactionFee = new CoinNotationPipe().transform(this.transactionFee);
+    if (this.hasOpReturn) {
+      this.opReturnAmount = new CoinNotationPipe().transform(this.opReturnAmount);
+      this.transaction.amount = +this.transaction.recipients[0].amount + +this.transactionFee + +this.opReturnAmount;
+    } else {
+      this.transaction.amount = +this.transaction.recipients[0].amount + +this.transactionFee;
+    }
   }
 
   toggleDetails() {
