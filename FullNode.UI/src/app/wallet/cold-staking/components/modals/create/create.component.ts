@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { NgbActiveModal, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
-import { GlobalService } from '../../../../../shared/services/global.service';
+import { GlobalService } from '@shared/services/global.service';
 
 import { ColdStakingServiceBase } from '../../../cold-staking.service';
 import { ColdStakingCreateSuccessComponent } from '../create-success/create-success.component';
@@ -24,9 +24,9 @@ export class ColdStakingCreateComponent {
     canCreate = false;
     opacity = 1;
     feeTypes: FeeType[] = [
-        { id: 0, display: 'Low - 0.0001 IMPL' },
-        { id: 1, display: 'Medium - 0.001 IMPL' },
-        { id: 2, display: 'High - 0.01 IMPL' },
+        { id: 0, display: 'Low - 0.0001 STRAT' },
+        { id: 1, display: 'Medium - 0.001 STRAT' },
+        { id: 2, display: 'High - 0.01 STRAT' },
     ];
     selectedFeeType: FeeType;
     HotColdWalletEnum = HotColdWallet;

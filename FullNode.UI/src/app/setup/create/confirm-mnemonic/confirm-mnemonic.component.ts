@@ -1,17 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormBuilder } from '@angular/forms';
+import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 
-import { GlobalService } from '../../../shared/services/global.service';
-import { ApiService } from '../../../shared/services/api.service';
-import { ModalService } from '../../../shared/services/modal.service';
+import { ApiService } from '@shared/services/api.service';
+import { ModalService } from '@shared/services/modal.service';
 
-import { WalletCreation } from '../../../shared/classes/wallet-creation';
-
-import { Subscription } from 'rxjs/Subscription';
-import { Subscribable } from 'rxjs/Observable';
-
+import { WalletCreation } from '@shared/models/wallet-creation';
 import { SecretWordIndexGenerator } from './secret-word-index-generator';
+import { GlobalService } from '@shared/services/global.service';
 
 @Component({
   selector: 'app-confirm-mnemonic',
@@ -22,22 +19,24 @@ export class ConfirmMnemonicComponent implements OnInit {
 
   public secretWordIndexGenerator = new SecretWordIndexGenerator();
 
-  constructor(private globalService: GlobalService, private apiService: ApiService, private genericModalService: ModalService, private route: ActivatedRoute, private router: Router, private fb: FormBuilder) {
+  constructor(private apiService: ApiService, private genericModalService: ModalService, private route: ActivatedRoute, private router: Router, private fb: FormBuilder, private globalService: GlobalService) {
     this.buildMnemonicForm();
   }
-  private subscription: Subscription;
   private newWallet: WalletCreation;
+  private subscription: Subscription;
+  public sidechainEnabled: boolean;
   public mnemonicForm: FormGroup;
   public matchError: string = "";
   public isCreating: boolean;
 
   ngOnInit() {
+    this.sidechainEnabled = this.globalService.getSidechainEnabled();
     this.subscription = this.route.queryParams.subscribe(params => {
       this.newWallet = new WalletCreation(
         params["name"],
         params["mnemonic"],
         params["password"],
-        params["password"]
+        params["passphrase"]
       )
     });
   }
@@ -129,7 +128,7 @@ export class ConfirmMnemonicComponent implements OnInit {
   }
 
   public onBackClicked() {
-    this.router.navigate(['/setup/create/show-mnemonic'], { queryParams : { name: this.newWallet.name, mnemonic: this.newWallet.mnemonic, password: this.newWallet.password }});
+    this.router.navigate(['/setup/create/show-mnemonic'], { queryParams : { name: this.newWallet.name, mnemonic: this.newWallet.mnemonic, password: this.newWallet.password, passphrase: this.newWallet.passphrase }});
   }
 
   private checkMnemonic(): boolean {
@@ -147,31 +146,15 @@ export class ConfirmMnemonicComponent implements OnInit {
   }
 
   private createWallet(wallet: WalletCreation) {
-    this.apiService
-      .createStratisWallet(wallet)
+    this.apiService.createStratisWallet(wallet)
       .subscribe(
         response => {
-          if (response.status >= 200 && response.status < 400){
-            this.genericModalService.openModal("Wallet Created", "Your wallet has been created.<br>Keep your secret words and password safe!");
-            this.router.navigate(['']);
-          }
+          this.genericModalService.openModal("Wallet Created", "Your wallet has been created.<br>Keep your secret words, password and passphrase safe!");
+          this.router.navigate(['']);
         },
         error => {
           this.isCreating = false;
-          console.log(error);
-          if (error.status === 0) {
-            this.genericModalService.openModal(null, null);
-          } else if (error.status >= 400) {
-            if (!error.json().errors[0]) {
-              console.log(error);
-            }
-            else {
-              this.genericModalService.openModal(null, error.json().errors[0].message);
-              this.router.navigate(['/setup/create']);
-            }
-          }
         }
-      )
-    ;
+      );
   }
 }

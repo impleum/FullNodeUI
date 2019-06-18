@@ -1,29 +1,44 @@
 {
-  "appId": "com.impleum.core",
-  "productName": "Impleum Core",
+  "appId": "com.stratisplatform.core",
+  "productName": "Stratis Core",
   "publish": null,
   "directories": {
     "output": "app-builds"
   },
+  "files": [
+    "**/*",
+    "!**/*.ts",
+    "!*.code-workspace",
+    "!LICENSE.md",
+    "!package.json",
+    "!package-lock.json",
+    "!src/",
+    "!e2e/",
+    "!angular.json",
+    "!_config.yml",
+    "!karma.conf.js",
+    "!tsconfig.json",
+    "!tslint.json"
+  ],
   "win": {
-    "icon": "dist/assets/images/icon",
+    "icon": "dist/assets/images/stratis/icon",
     "target": [
       "nsis"
     ],
-    "artifactName": "${productName}-v${version}-setup-${os}-${env.arch}.${ext}"
+    "artifactName": "${productName}-v${version}-setup-${os}-${arch}.${ext}"
   },
   "linux": {
-    "icon": "dist/assets/images/",
+    "icon": "dist/assets/images/stratis/",
     "target": [
       "deb",
       "tar.gz"
     ],
-    "synopsis": "FullNode.UI: Impleum' staking wallet.",
+    "synopsis": "StratisCore.UI: Stratis' staking wallet.",
     "category": "Utility",
     "artifactName": "${productName}-v${version}-${os}-${arch}.${ext}"
   },
   "mac": {
-    "icon": "dist/assets/images/icon.icns",
+    "icon": "dist/assets/images/stratis/icon.icns",
     "target": [
       "dmg"
     ],
@@ -35,7 +50,7 @@
     "perMachine": true,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": true,
-    "guid": "77a9e6cf-1e9c-4ba4-aa25-612acf5efdb2",
+    "guid": "ef77eb40-01cf-4516-9da6-f3c6ba6854aa",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "license": "src/assets/images/license_en.txt"
@@ -45,7 +60,7 @@
   },
   "extraResources": [
     "daemon/**/*",
-    "src/assets/images/icon-tray.png",
+    "src/assets/images/stratis/icon-16.png",
     "src/assets/images/license_en.txt"
   ]
 }

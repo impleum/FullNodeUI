@@ -1,30 +1,76 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, Tray } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import * as path from 'path';
 import * as url from 'url';
 import * as os from 'os';
+if (os.arch() === 'arm') {
+  app.disableHardwareAcceleration();
+}
+
+// Set to true if you want to build Core for sidechains
+const buildForSidechain = false;
 
 let serve;
 let testnet;
+let sidechain;
+let nodaemon;
 const args = process.argv.slice(1);
-serve = args.some(val => val === "--serve" || val === "-serve");
-testnet = args.some(val => val === "--testnet" || val === "-testnet");
+serve = args.some(val => val === '--serve' || val === '-serve');
+testnet = args.some(val => val === '--testnet' || val === '-testnet');
+sidechain = args.some(val => val === '--sidechain' || val === '-sidechain');
+nodaemon = args.some(val => val === '--nodaemon' || val === '-nodaemon');
 
+if (buildForSidechain) {
+  sidechain = true;
+}
+
+const applicationName = sidechain ? 'Cirrus Core' : 'Impleum Core';
+
+// Set default API port according to network
+let apiPortDefault;
+if (testnet && !sidechain) {
+  apiPortDefault = 39222;
+} else if (!testnet && !sidechain) {
+  apiPortDefault = 38222;
+} else if (sidechain && testnet) {
+  apiPortDefault = 39222;
+} else if (sidechain && !testnet) {
+  apiPortDefault = 38222;
+}
+
+// Sets default arguments
+const coreargs = require('minimist')(args, {
+  default : {
+    daemonip: 'localhost',
+    apiport: apiPortDefault
+  },
+});
+
+// Apply arguments to override default daemon IP and port
+let daemonIP;
 let apiPort;
-if (testnet) {
-  apiPort = 39222;
-} else {
-  apiPort = 38222;
+daemonIP = coreargs.daemonip;
+apiPort = coreargs.apiport;
+
+// Prevents daemon from starting if connecting to remote daemon.
+if (daemonIP !== 'localhost') {
+  nodaemon = true;
 }
 
 ipcMain.on('get-port', (event, arg) => {
   event.returnValue = apiPort;
 });
 
-try {
-  require('dotenv').config();
-} catch {
-  console.log('asar');
-}
+ipcMain.on('get-testnet', (event, arg) => {
+  event.returnValue = testnet;
+});
+
+ipcMain.on('get-sidechain', (event, arg) => {
+  event.returnValue = sidechain;
+});
+
+ipcMain.on('get-daemonip', (event, arg) => {
+  event.returnValue = daemonIP;
+});
 
 require('electron-context-menu')({
   showInspectElement: serve
@@ -42,8 +88,7 @@ function createWindow() {
     frame: true,
     minWidth: 1150,
     minHeight: 650,
-    title: "Impleum Core",
-    icon: path.join(__dirname, 'assets/images/icon.png')
+    title: applicationName
   });
 
   if (serve) {
@@ -64,6 +109,9 @@ function createWindow() {
 
   // Emitted when the window is going to close.
   mainWindow.on('close', () => {
+    if (!serve && !nodaemon) {
+      shutdownDaemon(daemonIP, apiPort);
+    }
   })
 
   // Emitted when the window is closed.
@@ -81,10 +129,13 @@ function createWindow() {
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
   if (serve) {
-    console.log("Stratis UI was started in development mode. This requires the user to be running the Stratis Full Node Daemon himself.")
-  }
-  else {
-    startStratisApi();
+    console.log('Impleum UI was started in development mode. This requires the user to be running the Impleum Full Node Daemon himself.')
+  } else {
+    if (sidechain && !nodaemon) {
+      startDaemon('Impleum.SidechainD');
+    } else if (!nodaemon) {
+      startDaemon('Impleum.ImpleumD')
+    }
   }
   createTray();
   createWindow();
@@ -93,17 +144,23 @@ app.on('ready', () => {
   }
 });
 
+/* 'before-quit' is emitted when Electron receives
+ * the signal to exit and wants to start closing windows */
 app.on('before-quit', () => {
-  closeStratisApi();
+  if (!serve && !nodaemon) {
+    shutdownDaemon(daemonIP, apiPort);
+  }
+});
+
+app.on('quit', () => {
+  if (!serve && !nodaemon) {
+    shutdownDaemon(daemonIP, apiPort);
+  }
 });
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on('activate', () => {
@@ -114,75 +171,65 @@ app.on('activate', () => {
   }
 });
 
-function closeStratisApi() {
-  // if (process.platform !== 'darwin' && !serve) {
-    if (process.platform !== 'darwin' && !serve && !testnet) {
-    var http2 = require('http');
-    const options1 = {
-      hostname: 'localhost',
-      port: 38222,
-      path: '/api/node/shutdown',
-      method: 'POST'
-    };
+function shutdownDaemon(daemonAddr, portNumber) {
+  const http = require('http');
+  const body = JSON.stringify({});
 
-   const req = http2.request(options1, (res) => {});
-   req.write('');
-   req.end();
+  const request = new http.ClientRequest({
+    method: 'POST',
+    hostname: daemonAddr,
+    port: portNumber,
+    path: '/api/node/shutdown',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(body)
+    }
+  })
 
-   } else if (process.platform !== 'darwin' && !serve && testnet) {
-     var http2 = require('http');
-     const options2 = {
-       hostname: 'localhost',
-       port: 39222,
-       path: '/api/node/shutdown',
-       method: 'POST'
-     };
+  request.write('true');
+  request.on('error', function (e) { });
+  request.on('timeout', function (e) { request.abort(); });
+  request.on('uncaughtException', function (e) { request.abort(); });
 
-   const req = http2.request(options2, (res) => {});
-   req.write('');
-   req.end();
-   }
+  request.end(body);
 };
 
-function startStratisApi() {
-  var stratisProcess;
-  const spawnStratis = require('child_process').spawn;
+function startDaemon(daemonName) {
+  let daemonProcess;
+  const spawnDaemon = require('child_process').spawn;
 
-  //Start Stratis Daemon
-  let apiPath = path.resolve(__dirname, 'assets//daemon//Impleum.ImpleumD');
+  let daemonPath;
   if (os.platform() === 'win32') {
-    apiPath = path.resolve(__dirname, '..\\..\\resources\\daemon\\Impleum.ImpleumD.exe');
-  } else if(os.platform() === 'linux') {
-	  apiPath = path.resolve(__dirname, '..//..//resources//daemon//Impleum.ImpleumD');
+    daemonPath = path.resolve(__dirname, '..\\..\\resources\\daemon\\' + daemonName + '.exe');
+  } else if (os.platform() === 'linux') {
+    daemonPath = path.resolve(__dirname, '..//..//resources//daemon//' + daemonName);
   } else {
-	  apiPath = path.resolve(__dirname, '..//..//resources//daemon//Impleum.ImpleumD');
+    daemonPath = path.resolve(__dirname, '..//..//resources//daemon//' + daemonName);
   }
 
-  if (!testnet) {
-    stratisProcess = spawnStratis(apiPath, {
-      detached: true
-    });
-  } else if (testnet) {
-    stratisProcess = spawnStratis(apiPath, ['-testnet'], {
-      detached: true
-    });
-  }
+  daemonProcess = spawnDaemon(daemonPath, [args.join(' ').replace('--','-')], {
+    detached: true
+  });
 
-  stratisProcess.stdout.on('data', (data) => {
-    writeLog(`Stratis: ${data}`);
+  daemonProcess.stdout.on('data', (data) => {
+    writeLog(`Impleum: ${data}`);
   });
 }
 
 function createTray() {
-  //Put the app in system tray
+  // Put the app in system tray
+  let iconPath = 'stratis/icon-16.png';
+  if (sidechain) {
+    iconPath = 'cirrus/icon-16.png';
+  }
   let trayIcon;
   if (serve) {
-    trayIcon = nativeImage.createFromPath('./src/assets/images/icon-tray.png');
+    trayIcon = nativeImage.createFromPath('./src/assets/images/' + iconPath);
   } else {
-    trayIcon = nativeImage.createFromPath(path.resolve(__dirname, '../../resources/src/assets/images/icon-tray.png'));
+    trayIcon = nativeImage.createFromPath(path.resolve(__dirname, '../../resources/src/assets/images/' + iconPath));
   }
 
-  let systemTray = new Tray(trayIcon);
+  const systemTray = new Tray(trayIcon);
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Hide/Show',
@@ -210,31 +257,33 @@ function createTray() {
   });
 
   app.on('window-all-closed', function () {
-    if (systemTray) systemTray.destroy();
+    if (systemTray) {
+      systemTray.destroy();
+    }
   });
-};
+}
 
 function writeLog(msg) {
   console.log(msg);
-};
+}
 
 function createMenu() {
-  var menuTemplate = [{
+  const menuTemplate = [{
     label: app.getName(),
     submenu: [
-      { label: "About " + app.getName(), selector: "orderFrontStandardAboutPanel:" },
-      { label: "Quit", accelerator: "Command+Q", click: function() { app.quit(); }}
+      { label: 'About ' + app.getName(), selector: 'orderFrontStandardAboutPanel:' },
+      { label: 'Quit', accelerator: 'Command+Q', click: function() { app.quit(); }}
     ]}, {
-    label: "Edit",
+    label: 'Edit',
     submenu: [
-      { label: "Undo", accelerator: "CmdOrCtrl+Z", selector: "undo:" },
-      { label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", selector: "redo:" },
-      { label: "Cut", accelerator: "CmdOrCtrl+X", selector: "cut:" },
-      { label: "Copy", accelerator: "CmdOrCtrl+C", selector: "copy:" },
-      { label: "Paste", accelerator: "CmdOrCtrl+V", selector: "paste:" },
-      { label: "Select All", accelerator: "CmdOrCtrl+A", selector: "selectAll:" }
+      { label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:' },
+      { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:' },
+      { label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:' },
+      { label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:' },
+      { label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:' },
+      { label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:' }
     ]}
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
-};
+}

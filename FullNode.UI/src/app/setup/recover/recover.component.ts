@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormBuilder } from '@angular/forms';
+import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BsDatepickerConfig } from 'ngx-bootstrap/datepicker';
 
-import { GlobalService } from '../../shared/services/global.service';
-import { ApiService } from '../../shared/services/api.service';
-import { ModalService } from '../../shared/services/modal.service';
+import { GlobalService } from '@shared/services/global.service';
+import { ApiService } from '@shared/services/api.service';
+import { ModalService } from '@shared/services/modal.service';
 
-import { WalletRecovery } from '../../shared/classes/wallet-recovery';
+import { WalletRecovery } from '@shared/models/wallet-recovery';
 
 @Component({
   selector: 'app-recover',
@@ -23,12 +23,15 @@ export class RecoverComponent implements OnInit {
   public recoverWalletForm: FormGroup;
   public creationDate: Date;
   public isRecovering: boolean = false;
+  public minDate = new Date("2009-08-09");
   public maxDate = new Date();
   public bsConfig: Partial<BsDatepickerConfig>;
+  public sidechainEnabled: boolean;
   private walletRecovery: WalletRecovery;
 
   ngOnInit() {
-    this.bsConfig = Object.assign({}, {showWeekNumbers: false, containerClass: 'theme-blue'});
+    this.sidechainEnabled = this.globalService.getSidechainEnabled();
+    this.bsConfig = Object.assign({}, {showWeekNumbers: false, containerClass: 'theme-dark-blue'});
   }
 
   private buildRecoverForm(): void {
@@ -42,6 +45,7 @@ export class RecoverComponent implements OnInit {
       ],
       "walletMnemonic": ["", Validators.required],
       "walletDate": ["", Validators.required],
+      "walletPassphrase": [""],
       "walletPassword": ["", Validators.required],
       "selectNetwork": ["test", Validators.required]
     });
@@ -72,6 +76,7 @@ export class RecoverComponent implements OnInit {
     'walletMnemonic': '',
     'walletDate': '',
     'walletPassword': '',
+    'walletPassphrase': '',
 
   };
 
@@ -108,38 +113,23 @@ export class RecoverComponent implements OnInit {
       this.recoverWalletForm.get("walletName").value,
       this.recoverWalletForm.get("walletMnemonic").value,
       this.recoverWalletForm.get("walletPassword").value,
-      this.recoverWalletForm.get("walletPassword").value,
+      this.recoverWalletForm.get("walletPassphrase").value,
       recoveryDate
     );
     this.recoverWallet(this.walletRecovery);
   }
 
   private recoverWallet(recoverWallet: WalletRecovery) {
-    this.apiService
-      .recoverStratisWallet(recoverWallet)
+    this.apiService.recoverStratisWallet(recoverWallet)
       .subscribe(
         response => {
-          if (response.status >= 200 && response.status < 400) {
-            let body = "Your wallet has been recovered. \nYou will be redirected to the decryption page.";
-            this.genericModalService.openModal("Wallet Recovered", body);
-            this.router.navigate([''])
-          }
+          let body = "Your wallet has been recovered. \nYou will be redirected to the decryption page.";
+          this.genericModalService.openModal("Wallet Recovered", body);
+          this.router.navigate([''])
         },
         error => {
           this.isRecovering = false;
-          console.log(error);
-          if (error.status === 0) {
-            this.genericModalService.openModal(null, null);
-          } else if (error.status >= 400) {
-            if (!error.json().errors[0]) {
-              console.log(error);
-            }
-            else {
-              this.genericModalService.openModal(null, error.json().errors[0].message);
-            }
-          }
         }
-      )
-    ;
+      );
   }
 }
